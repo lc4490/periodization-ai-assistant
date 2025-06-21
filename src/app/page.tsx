@@ -66,7 +66,7 @@ export default function Home() {
   const getInitialGreeting = (lang = "en") => {
     switch (lang) {
       case "zh":
-        return "👋 你好！我是你的多语言训练助手。欢迎用中文提问关于力量训练、增肌、周期训练等问题！";
+        return "👋 你好！我是你的多語言訓練助理。歡迎用中文提問關於肌力訓練、增肌、週期訓練等問題！";
       case "es":
         return "👋 ¡Hola! Soy tu asistente multilingüe de entrenamiento. Pregúntame sobre entrenamiento de fuerza, hipertrofia, periodización, o rendimiento atlético.";
       case "fr":
