@@ -2,45 +2,28 @@
 import {
   Box,
   Button,
-  createTheme,
+  CircularProgress,
   CssBaseline,
+  FormControl,
+  MenuItem,
   NativeSelect,
+  Select,
   Stack,
   TextField,
   ThemeProvider,
   Typography,
   useMediaQuery,
 } from "@mui/material";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { lightTheme, darkTheme } from "./theme";
+import { customComponents } from "./customComponents";
+import ReactMarkdown from "react-markdown";
+
+// icon imports
 import PersonIcon from "@mui/icons-material/Person";
 import AssistantIcon from "@mui/icons-material/Assistant";
-import { useEffect } from "react";
-
-// light/dark themes
-const lightTheme = createTheme({
-  palette: {
-    mode: "light",
-    background: {
-      default: "#ffffff",
-      paper: "#ffffff",
-    },
-    text: {
-      primary: "#000000",
-    },
-  },
-});
-const darkTheme = createTheme({
-  palette: {
-    mode: "dark",
-    background: {
-      default: "#121212",
-      paper: "#121212",
-    },
-    text: {
-      primary: "#ffffff",
-    },
-  },
-});
+import SendIcon from "@mui/icons-material/Send";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 export default function Home() {
   // loading state
@@ -71,6 +54,12 @@ export default function Home() {
         return "👋 ¡Hola! Soy tu asistente multilingüe de entrenamiento. Pregúntame sobre entrenamiento de fuerza, hipertrofia, periodización, o rendimiento atlético.";
       case "fr":
         return "👋 Salut ! Je suis ton assistant d'entraînement multilingue. Pose-moi des questions sur l'entraînement de force, l'hypertrophie, la périodisation ou la performance.";
+      case "de":
+        return "👋 Hallo! Ich bin dein mehrsprachiger Trainingsassistent. Stell mir Fragen zu Krafttraining, Muskelaufbau, Periodisierung oder sportlicher Leistung.";
+      case "ja":
+        return "👋 こんにちは！多言語対応のトレーニングアシスタントです。筋力トレーニング、筋肥大、ピリオダイゼーション、アスリートのパフォーマンスについて何でも聞いてください。";
+      case "ko":
+        return "👋 안녕하세요! 저는 다국어 트레이닝 도우미입니다. 근력 운동, 근비대, 주기화 훈련 또는 운동 능력 향상에 대해 무엇이든 물어보세요.";
       default:
         return "👋 Hi! I’m your multilingual training assistant. Ask me anything about strength training, hypertrophy, periodization, or athletic performance — in any language. I’ll respond in the same language you use.";
     }
@@ -174,7 +163,7 @@ export default function Home() {
       <CssBaseline />
       <Box
         width="100vw"
-        height="100vh"
+        height={useMediaQuery("(max-width:600px)") ? "90vh" : "100vh"}
         display="flex"
         flexDirection="column"
         justifyContent="center"
@@ -199,61 +188,63 @@ export default function Home() {
             position="relative"
           >
             {/* language control  */}
-            {/* <FormControl
-          sx={{
-            width: '85px', // Adjust the width value as needed
-          }}
-          >
-            
-            <InputLabel variant="standard" htmlFor="uncontrolled-native">
-              {t('language')}
-            </InputLabel>
-            <NativeSelect
-              defaultValue={'en'}
-              onChange={handleLanguageChange}
-              inputProps={{
-                name: t('language'),
-                id: 'uncontrolled-native',
-              }}
+            <FormControl
+              id="language-button"
               sx={{
-                '& .MuiNativeSelect-select': {
-                  '&:focus': {
-                    backgroundColor: 'transparent',
-                  },
-                },
-                '&::before': {
-                  borderBottom: 'none',
-                },
-                '&::after': {
-                  borderBottom: 'none',
-                },
+                width: "100px", // Fixed width for language selector
+                borderRadius: "12px",
+                boxShadow: "0px 0px 12px rgba(0, 255, 255, 0.6)", // Glowing effect
+                backgroundColor: "action.active",
+                color: "background.default",
               }}
-              disableUnderline
             >
-              <option value="en">English</option>
-              <option value="cn">中文（简体）</option>
-              <option value="tc">中文（繁體）</option>
-              <option value="es">Español</option>
-              <option value="fr">Français</option>
-              <option value="de">Deutsch</option>
-              <option value="jp">日本語</option>
-              <option value="kr">한국어</option>
-            </NativeSelect>
-          </FormControl> */}
-            <NativeSelect
-              value={selectedLanguage}
-              onChange={handleLanguageChange}
-            >
-              <option value="en">English</option>
-              <option value="zh">中文</option>
-              <option value="es">Español</option>
-              <option value="fr">Français</option>
-              <option value="de">Deutsch</option>
-              <option value="ja">日本語</option>
-              <option value="ko">한국어</option>
-            </NativeSelect>
-
-            {/* <Button>Equipment</Button> */}
+              <Select
+                value={selectedLanguage}
+                onChange={handleLanguageChange}
+                // disableunderline="true"
+                displayEmpty
+                renderValue={(selected) => {
+                  if (!selected) {
+                    return <span>{"English"}</span>;
+                  }
+                  const selectedItem = {
+                    en: "English",
+                    zh: "中文",
+                    es: "Español",
+                    fr: "Français",
+                    de: "Deutsch",
+                    ja: "日本語",
+                    ko: "한국어",
+                  }[selected];
+                  return <span>{selectedItem}</span>;
+                }}
+                sx={{
+                  fontSize: "0.9rem",
+                  fontWeight: "700",
+                  fontFamily: "Roboto Mono, Arial, sans-serif",
+                  color: "background.default",
+                  borderColor: "background.default",
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    border: "none", // Remove the border
+                  },
+                  "& .MuiSelect-select": {
+                    paddingTop: "10px",
+                    paddingBottom: "10px",
+                  },
+                  "& .MuiSelect-icon": {
+                    color: "background.default",
+                  },
+                }}
+              >
+                <MenuItem value="en">English</MenuItem>
+                <MenuItem value="zh">中文</MenuItem>
+                <MenuItem value="es">Español</MenuItem>
+                <MenuItem value="fr">Français</MenuItem>
+                <MenuItem value="de">Deutsch</MenuItem>
+                <MenuItem value="ja">日本語</MenuItem>
+                <MenuItem value="ko">한국어</MenuItem>
+              </Select>
+            </FormControl>
             {/* title */}
             <Box display="flex" flexDirection={"row"} alignItems={"center"}>
               <Typography variant="h6" textAlign="center">
@@ -327,10 +318,13 @@ export default function Home() {
                       ? "primary.main"
                       : "secondary.main"
                   }
-                  borderRadius={16}
-                  p={3}
+                  color={message.role == "assistant" ? "text.primary" : "black"}
+                  borderRadius={2.5}
+                  p={2}
                 >
-                  {message.content}
+                  <ReactMarkdown components={customComponents}>
+                    {message.content}
+                  </ReactMarkdown>
                 </Box>
                 {message.role === "user" && (
                   <PersonIcon sx={{ ml: 1, fontSize: "2.5rem" }} />
@@ -346,26 +340,66 @@ export default function Home() {
             sx={{ width: "100%", bottom: 0 }}
           >
             <TextField
-              label={"Message"}
+              placeholder={"Message"}
+              autoFocus
               fullWidth
               value={message}
-              variant="outlined"
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyPress}
               disabled={isLoading}
-              sx={{ borderRadius: "8px" }}
-            ></TextField>
+              aria-label={"Message input field"}
+              sx={{
+                borderRadius: "9999px", // Circular shape
+                "& .MuiInputBase-root": {
+                  borderRadius: "9999px", // Circular input field
+                },
+                "& .MuiOutlinedInput-notchedOutline": {
+                  borderRadius: "9999px", // Circular outline
+                },
+                height: "48px", // Adjust the height to make it more circular
+              }}
+            />
             {/* send button */}
             <Button
               variant="outlined"
               onClick={sendMessage}
-              disabled={message == ""}
+              disabled={isLoading}
+              sx={{
+                color: "background.default",
+                borderColor: "text.primary",
+                borderRadius: "9999px", // Circular shape
+                height: "48px", // Match height with TextField
+                width: "48px", // Make it circular
+                minWidth: "48px", // Ensure button stays circular
+                "&:hover": {
+                  backgroundColor: "text.primary",
+                  color: "background.default",
+                  borderColor: "text.primary",
+                },
+              }}
             >
-              {"send"}
+              {isLoading ? <CircularProgress size={24} /> : <SendIcon />}
             </Button>
             {/* clear history */}
-            <Button onClick={clearChatLog} variant="outlined">
-              {"clear"}
+            <Button
+              onClick={clearChatLog}
+              variant="outlined"
+              disabled={isLoading}
+              sx={{
+                color: "background.default",
+                borderColor: "text.primary",
+                borderRadius: "9999px", // Circular shape
+                height: "48px", // Match height with TextField
+                width: "48px", // Make it circular
+                minWidth: "48px", // Ensure button stays circular
+                "&:hover": {
+                  backgroundColor: "text.primary",
+                  color: "background.default",
+                  borderColor: "text.primary",
+                },
+              }}
+            >
+              <DeleteIcon />
             </Button>
           </Stack>
         </Stack>
