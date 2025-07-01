@@ -29,6 +29,25 @@ export async function POST(req) {
   const index = pc.index("periodization").namespace("ns1");
   const openai = new OpenAI();
   const text = data[data.length - 1].content;
+
+  async function translateToEnglish(text) {
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content:
+            "Translate the following text to English. Only return the translated content.",
+        },
+        {
+          role: "user",
+          content: text,
+        },
+      ],
+    });
+
+    return response.choices[0].message.content?.trim() || text;
+  }
   const englishText = await translateToEnglish(text);
 
   //   embed query
@@ -88,28 +107,4 @@ export async function POST(req) {
     },
   });
   return new NextResponse(stream);
-}
-
-export async function translateToEnglish(text) {
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo",
-      messages: [
-        {
-          role: "system",
-          content:
-            "Translate the following text to English. Only return the translated content.",
-        },
-        {
-          role: "user",
-          content: text,
-        },
-      ],
-    });
-
-    return response.choices[0].message.content?.trim() || text;
-  } catch (error) {
-    console.error("Translation error:", error);
-    return text;
-  }
 }

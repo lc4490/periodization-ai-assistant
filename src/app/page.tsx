@@ -128,7 +128,12 @@ export default function Home() {
               { ...lastMessage, content: lastMessage.content + text },
             ];
           });
+          result += text;
           return reader.read().then(processText);
+        })
+        .then(() => {
+          speakText(result); // ✅ TTS after stream ends
+          return result;
         });
     });
     // set loading to false after message is sent
