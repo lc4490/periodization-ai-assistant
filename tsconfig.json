@@ -26,7 +26,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "src/app/customComponents.js"
+    "src/app/customComponents.js",
+    "types"
   ],
   "exclude": ["node_modules"]
 }

@@ -17,6 +17,10 @@ Examples of terms you might explain include:
 Only use the retrieved content as your source, unless general clarification is needed.
 `;
 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 export async function POST(req) {
   const data = await req.json();
   const pc = new Pinecone({
@@ -25,11 +29,12 @@ export async function POST(req) {
   const index = pc.index("periodization").namespace("ns1");
   const openai = new OpenAI();
   const text = data[data.length - 1].content;
+  const englishText = await translateToEnglish(text);
 
   //   embed query
   const embedding = await openai.embeddings.create({
     model: "text-embedding-3-small",
-    input: text,
+    input: englishText,
     encoding_format: "float",
   });
 
@@ -59,7 +64,7 @@ export async function POST(req) {
         content: `Here is some relevant content from the book:\n\n${context}\n\nNow answer this question:\n\n"${userMessage}"`,
       },
     ],
-    model: "gpt-3.5-turbo",
+    model: "gpt-4",
     stream: true,
   });
 
@@ -83,4 +88,28 @@ export async function POST(req) {
     },
   });
   return new NextResponse(stream);
+}
+
+export async function translateToEnglish(text) {
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [
+        {
+          role: "system",
+          content:
+            "Translate the following text to English. Only return the translated content.",
+        },
+        {
+          role: "user",
+          content: text,
+        },
+      ],
+    });
+
+    return response.choices[0].message.content?.trim() || text;
+  } catch (error) {
+    console.error("Translation error:", error);
+    return text;
+  }
 }

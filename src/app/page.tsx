@@ -24,6 +24,9 @@ import PersonIcon from "@mui/icons-material/Person";
 import AssistantIcon from "@mui/icons-material/Assistant";
 import SendIcon from "@mui/icons-material/Send";
 import DeleteIcon from "@mui/icons-material/Delete";
+import KeyboardVoiceIcon from "@mui/icons-material/KeyboardVoice";
+import SettingsVoiceIcon from "@mui/icons-material/SettingsVoice";
+import StopIcon from "@mui/icons-material/Stop";
 
 export default function Home() {
   // loading state
@@ -46,8 +49,9 @@ export default function Home() {
     ]);
   };
 
-  const getInitialGreeting = (lang = "en") => {
-    switch (lang) {
+  const getInitialGreeting = (selectedLanguage: string) => {
+    console.log(selectedLanguage);
+    switch (selectedLanguage) {
       case "zh":
         return "👋 你好！我是你的多語言訓練助理。歡迎用中文提問關於肌力訓練、增肌、週期訓練等問題！";
       case "es":
@@ -76,7 +80,7 @@ export default function Home() {
   const [messages, setMessages] = useState([
     {
       role: "assistant",
-      content: getInitialGreeting(),
+      content: getInitialGreeting(selectedLanguage),
     },
   ]);
   const [message, setMessage] = useState("");
@@ -151,13 +155,131 @@ export default function Home() {
     }
   }, [messages]);
   const clearChatLog = () => {
+    console.log(selectedLanguage);
     setMessages([
       {
         role: "assistant",
-        content: getInitialGreeting(),
+        content: getInitialGreeting(selectedLanguage),
       },
     ]);
   };
+
+  // text to speech
+  const [isListening, setIsListening] = useState(false); // Track whether speech recognition is in progress
+  const [isSpeaking, setIsSpeaking] = useState(false); // Track whether speech synthesis is in progress
+  const [recognition, setRecognition] = useState<SpeechRecognition | null>(
+    null
+  );
+
+  useEffect(() => {
+    if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
+      const SpeechRecognition =
+        window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      recognitionInstance.continuous = true;
+      recognitionInstance.interimResults = true;
+      recognitionInstance.lang = selectedLanguage;
+
+      recognitionInstance.onresult = (event) => {
+        let interimTranscript = "";
+        let finalTranscript = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+            finalTranscript += event.results[i][0].transcript;
+          } else {
+            interimTranscript += event.results[i][0].transcript;
+          }
+        }
+        setMessage(finalTranscript + interimTranscript); // Update the message input field with both final and interim results
+      };
+
+      recognitionInstance.onend = () => {
+        setIsListening(false);
+        setMessage("");
+      };
+
+      setRecognition(recognitionInstance);
+    } else {
+      alert("Your browser does not support speech recognition.");
+    }
+  }, []);
+
+  const startListening = () => {
+    if (recognition) {
+      const audio = new Audio("/start-sound.mp3"); // Use a small audio file for the cue
+      audio.play();
+      recognition.lang = selectedLanguage;
+      recognition.start();
+      setIsListening(true);
+    }
+  };
+
+  const stopListening = () => {
+    if (recognition) {
+      recognition.stop();
+      setIsListening(false);
+    }
+  };
+
+  // speech to text
+  const correctPronunciation = (text: string) => {
+    // Replace specific names with phonetic spellings
+    return text.replace(/Kacey Lee/gi, "Casey Lee");
+  };
+  const speakText = async (text: string) => {
+    try {
+      const modifiedText = correctPronunciation(text);
+
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ input: modifiedText }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch TTS audio");
+      }
+
+      const arrayBuffer = await res.arrayBuffer();
+
+      const audioContext = new ((window as any).AudioContext ||
+        (window as any).webkitAudioContext)();
+      if (audioContext.state === "suspended") {
+        await audioContext.resume();
+      }
+
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      source.connect(audioContext.destination);
+
+      source.onended = () => setIsSpeaking(false);
+
+      setIsSpeaking(true);
+      source.start(0);
+    } catch (error) {
+      console.error("Error playing speech:", error);
+      alert("There was an issue playing the TTS. Please try again.");
+    }
+  };
+
+  const handleMicrophoneClick = () => {
+    if (isSpeaking) {
+      // Stop the speech
+      window.speechSynthesis.cancel(); // Stop speech synthesis completely
+      setIsSpeaking(false);
+    } else if (!isListening) {
+      // Start listening for speech input
+      startListening();
+    } else {
+      // Stop listening
+      stopListening();
+      sendMessage();
+    }
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -359,6 +481,33 @@ export default function Home() {
                 height: "48px", // Adjust the height to make it more circular
               }}
             />
+            {/* microphone button */}
+            <Button
+              onClick={handleMicrophoneClick} // Single click handler for all states
+              variant="outlined"
+              disabled={isLoading} // Disable while loading
+              sx={{
+                color: "background.default",
+                borderColor: "text.primary",
+                borderRadius: "9999px",
+                height: "48px",
+                width: "48px",
+                minWidth: "48px",
+                "&:hover": {
+                  backgroundColor: "text.primary",
+                  color: "background.default",
+                  borderColor: "text.primary",
+                },
+              }}
+            >
+              {isSpeaking ? (
+                <StopIcon />
+              ) : isListening ? (
+                <SettingsVoiceIcon />
+              ) : (
+                <KeyboardVoiceIcon />
+              )}
+            </Button>
             {/* send button */}
             <Button
               variant="outlined"
